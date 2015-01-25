@@ -4,6 +4,25 @@ var upsert = require('./upsert');
 var utils = require('./utils');
 var Promise = utils.Promise;
 
+function stringify(input) {
+  if (!input) {
+    return 'undefined'; // backwards compat for empty reduce
+  }
+  // for backwards compat with mapreduce, functions/strings are stringified
+  // as-is. everything else is JSON-stringified.
+  switch (typeof input) {
+    case 'function':
+      // e.g. a mapreduce map
+      return input.toString();
+    case 'string':
+      // e.g. a mapreduce built-in _reduce function
+      return input.toString();
+    default:
+      // e.g. a JSON object in the case of mango queries
+      return JSON.stringify(input);
+  }
+}
+
 module.exports = function (opts) {
   var sourceDB = opts.db;
   var viewName = opts.viewName;
@@ -13,7 +32,7 @@ module.exports = function (opts) {
   var pluginName = opts.pluginName;
 
   // the "undefined" part is for backwards compatibility
-  var viewSignature = mapFun.toString() + (reduceFun && reduceFun.toString()) +
+  var viewSignature = stringify(mapFun) + stringify(reduceFun) +
     'undefined';
 
   if (!temporary && sourceDB._cachedViews) {

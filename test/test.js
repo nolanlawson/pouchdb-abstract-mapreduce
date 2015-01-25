@@ -4,6 +4,7 @@
 
 var Pouch = require('pouchdb');
 var Mapreduce = require('pouchdb-mapreduce');
+var abstractMapReduce = require('../');
 Pouch.plugin(Mapreduce);
 var chai = require('chai');
 var should = chai.should();
@@ -36,6 +37,66 @@ function setTimeoutPromise(time) {
     setTimeout(function () { resolve(true); }, time);
   });
 }
+
+//
+// the following are special tests for abstract-mapreduce
+//
+
+describe('custom mapper', function () {
+
+  var db;
+
+  beforeEach(function () {
+    db = new Pouch('customdb');
+  });
+  afterEach(function () {
+    return db.destroy();
+  });
+
+  it('basic custom mapper test', function () {
+    var customMapper = abstractMapReduce({
+      name: 'custom',
+      mapper: function (fields, emit) {
+        // mapFunDef is an array
+        return function (doc) {
+          emit(doc[fields[0]]);
+        };
+      },
+      reducer: function () {
+        throw new Error('reduce not supported');
+      },
+      ddocValidator: function () {
+        // do nothing
+      }
+    });
+
+    return db.put({
+      _id: '_design/foo',
+      views: {
+        foo: {
+          map: ['somefield']
+        }
+      }
+    }).then(function () {
+      return db.bulkDocs([
+        {_id: 'foo', somefield: 'foo'},
+        {_id: 'bar', somefield: 'bar'},
+      ]);
+    }).then(function () {
+      return customMapper.query.apply(db, ['foo']).then(function (res) {
+        res.rows.should.deep.equal([
+          { key: 'bar', id: 'bar', value: null },
+          { key: 'foo', id: 'foo', value: null }
+        ]);
+      });
+    });
+  });
+});
+
+//
+// the preceding were special tests for abstract-mapreduce
+//
+
 describe('upsert', function () {
   it('should throw an error with no doc id', function () {
     return upsert().should.be.rejected;
