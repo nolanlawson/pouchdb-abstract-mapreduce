@@ -1,6 +1,11 @@
 Abstract Map Reduce
 =====
 
+Deprecation notice
+----
+
+I deprecated this and decided to just fold `abstract-mapreduce` into `pouchdb-find` itself. It was a beautiful dream, but too much has changed in PouchDB/mapreduce since I wrote this for it to make much sense anymore.
+
 [![Build Status](https://travis-ci.org/nolanlawson/pouchdb-abstract-mapreduce.svg)](https://travis-ci.org/nolanlawson/pouchdb-abstract-mapreduce)
 
 Abstract map/reduce functions pulled out of the PouchDB map/reduce plugin.  Designed to be used for:
